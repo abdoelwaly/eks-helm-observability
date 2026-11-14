@@ -1,0 +1,6 @@
+apiVersion: v2
+name: podinfo-slo
+description: podinfo demo service with ServiceMonitor, SLO burn-rate alerts and a Grafana dashboard
+type: application
+version: 1.0.0
+appVersion: "6.17.0"

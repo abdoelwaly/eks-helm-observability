@@ -1,0 +1,95 @@
+# kube-prometheus-stack: Prometheus Operator, Prometheus, Alertmanager, Grafana,
+# node-exporter and kube-state-metrics.
+
+fullnameOverride: kps
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    retentionSize: 18GiB
+    # Pick up ServiceMonitors and PrometheusRules from every namespace,
+    # not only the ones created by this Helm release.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+  config:
+    route:
+      receiver: "null"
+      group_by: ["alertname", "namespace", "slo"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - matchers: ['severity = "page"']
+          receiver: slack-page
+        - matchers: ['severity = "ticket"']
+          receiver: slack-ticket
+    receivers:
+      - name: "null"
+      # Webhook URLs are injected from a Kubernetes secret at install time
+      # (see platform/install.sh); they are never committed.
+      - name: slack-page
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-slack/page-url
+            channel: "#alerts-page"
+            send_resolved: true
+            title: '{{ .CommonAnnotations.summary }}'
+            text: '{{ .CommonAnnotations.description }}'
+      - name: slack-ticket
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-slack/ticket-url
+            channel: "#alerts-ticket"
+            send_resolved: true
+            title: '{{ .CommonAnnotations.summary }}'
+            text: '{{ .CommonAnnotations.description }}'
+
+grafana:
+  defaultDashboardsTimezone: utc
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL
+  persistence:
+    enabled: true
+    storageClassName: gp3
+    size: 5Gi
+
+# EKS manages these control-plane components; their metrics are not scrapeable.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false

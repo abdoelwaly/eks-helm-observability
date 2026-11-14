@@ -1,0 +1,48 @@
+# promtool unit tests for the SLO rules. Run with `make test-rules`, which renders
+# the Helm chart to tests/rendered-rules.yaml first.
+rule_files:
+  - rendered-rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # 10% of requests fail: far above the 14.4x burn threshold (7.2%), so it pages.
+  - interval: 1m
+    input_series:
+      - series: 'http_request_duration_seconds_count{job="podinfo", status="200"}'
+        values: '0+90x180'
+      - series: 'http_request_duration_seconds_count{job="podinfo", status="500"}'
+        values: '0+10x180'
+      - series: 'http_request_duration_seconds_bucket{job="podinfo", le="0.25"}'
+        values: '0+100x180'
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: AvailabilityBudgetBurn1h
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              job: podinfo
+              slo: availability
+            exp_annotations:
+              summary: podinfo availability SLO burning 14.4x budget over 1h
+              description: 10% of requests returning 5xx over the last 1h; the availability SLO target is 0.995.
+              runbook_url: https://github.com/abdoelwaly/eks-helm-observability/blob/main/docs/runbooks.md#availability-budget-burn
+      # Every request is fast, so the latency SLO stays quiet.
+      - eval_time: 70m
+        alertname: LatencyBudgetBurn1h
+        exp_alerts: []
+
+  # 0.2% errors stay inside the 0.5% budget: nothing fires.
+  - interval: 1m
+    input_series:
+      - series: 'http_request_duration_seconds_count{job="podinfo", status="200"}'
+        values: '0+998x180'
+      - series: 'http_request_duration_seconds_count{job="podinfo", status="500"}'
+        values: '0+2x180'
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: AvailabilityBudgetBurn1h
+        exp_alerts: []
+      - eval_time: 70m
+        alertname: AvailabilityBudgetBurn6h
+        exp_alerts: []

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7aa2f7"/></marker>
+  </defs>
+  <rect width="1200" height="800" fill="#0f172a"/>
+  <text x="60" y="70" fill="#f8fafc" font-size="34" font-weight="700">EKS with SLO-based alerting</text>
+  <text x="60" y="105" fill="#94a3b8" font-size="18">Terraform VPC + EKS · Pod Identity · kube-prometheus-stack · multi-window burn-rate alerts</text>
+
+  <rect x="40" y="140" width="1120" height="420" rx="18" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="60" y="170" fill="#64748b" font-size="15">AWS VPC 10.20.0.0/16 · 3 AZs · public / private / intra subnets · flow logs</text>
+
+  <rect x="70" y="195" width="330" height="340" rx="14" fill="#111c33" stroke="#f59e0b" stroke-width="2"/>
+  <text x="90" y="230" fill="#fcd34d" font-size="20" font-weight="600">EKS control plane</text>
+  <text x="90" y="265" fill="#cbd5e1" font-size="15">• intra subnets, API CIDR allow-list</text>
+  <text x="90" y="293" fill="#cbd5e1" font-size="15">• access entries (no aws-auth)</text>
+  <text x="90" y="321" fill="#cbd5e1" font-size="15">• audit + API logs to CloudWatch</text>
+  <text x="90" y="349" fill="#cbd5e1" font-size="15">• add-ons: VPC CNI, CoreDNS,</text>
+  <text x="90" y="373" fill="#cbd5e1" font-size="15">   kube-proxy, Pod Identity, EBS CSI</text>
+  <text x="90" y="410" fill="#fcd34d" font-size="17" font-weight="600">Managed node group</text>
+  <text x="90" y="440" fill="#cbd5e1" font-size="15">• AL2023, Spot, m6i / m7i</text>
+  <text x="90" y="468" fill="#cbd5e1" font-size="15">• private subnets, 2–4 nodes</text>
+  <text x="90" y="496" fill="#cbd5e1" font-size="15">• gp3 encrypted volumes</text>
+
+  <rect x="440" y="195" width="300" height="340" rx="14" fill="#111c33" stroke="#22c55e" stroke-width="2"/>
+  <text x="460" y="230" fill="#86efac" font-size="20" font-weight="600">namespace: demo</text>
+  <rect x="460" y="250" width="260" height="120" rx="10" fill="#0b1324" stroke="#22c55e"/>
+  <text x="480" y="282" fill="#e2e8f0" font-size="16" font-weight="600">podinfo × 3</text>
+  <text x="480" y="308" fill="#94a3b8" font-size="14">non-root, read-only FS</text>
+  <text x="480" y="332" fill="#94a3b8" font-size="14">/metrics: RED histogram</text>
+  <rect x="460" y="390" width="260" height="125" rx="10" fill="#1e293b" stroke="#475569"/>
+  <text x="480" y="420" fill="#e2e8f0" font-size="15" font-weight="600">Helm chart podinfo-slo</text>
+  <text x="480" y="446" fill="#94a3b8" font-size="14">ServiceMonitor</text>
+  <text x="480" y="470" fill="#94a3b8" font-size="14">PrometheusRule (22 rules)</text>
+  <text x="480" y="494" fill="#94a3b8" font-size="14">Grafana dashboard ConfigMap</text>
+
+  <rect x="780" y="195" width="350" height="340" rx="14" fill="#111c33" stroke="#3b82f6" stroke-width="2"/>
+  <text x="800" y="230" fill="#93c5fd" font-size="20" font-weight="600">namespace: monitoring</text>
+  <text x="800" y="268" fill="#e2e8f0" font-size="16">Prometheus  (15d, 20 GiB gp3)</text>
+  <text x="800" y="300" fill="#e2e8f0" font-size="16">Alertmanager</text>
+  <text x="820" y="326" fill="#94a3b8" font-size="14">severity=page   → #alerts-page</text>
+  <text x="820" y="350" fill="#94a3b8" font-size="14">severity=ticket → #alerts-ticket</text>
+  <text x="800" y="384" fill="#e2e8f0" font-size="16">Grafana  (SLO dashboard)</text>
+  <text x="800" y="416" fill="#e2e8f0" font-size="16">node-exporter, kube-state-metrics</text>
+  <text x="800" y="452" fill="#94a3b8" font-size="14">secrets created at install time,</text>
+  <text x="800" y="474" fill="#94a3b8" font-size="14">never committed</text>
+  <line x1="740" y1="310" x2="776" y2="310" stroke="#7aa2f7" stroke-width="3" marker-end="url(#a)"/>
+  <text x="742" y="298" fill="#94a3b8" font-size="12">scrape</text>
+
+  <!-- SLO table -->
+  <rect x="60" y="590" width="1080" height="180" rx="14" fill="#1e293b" stroke="#334155"/>
+  <text x="85" y="625" fill="#e2e8f0" font-size="19" font-weight="600">SLOs and burn-rate alerts</text>
+  <text x="85" y="658" fill="#cbd5e1" font-size="15">Availability 99.5% (non-5xx) · Latency 99% under 250 ms · 30-day error budget</text>
+  <text x="85" y="692" fill="#86efac" font-size="15">page:   14.4× over 1h and 5m   ·   6× over 6h and 30m</text>
+  <text x="85" y="722" fill="#93c5fd" font-size="15">ticket: 3× over 1d and 2h   ·   1× over 3d and 6h</text>
+  <text x="85" y="752" fill="#94a3b8" font-size="15">Alert rules are unit-tested with promtool in CI; each alert links to a runbook.</text>
+</svg>

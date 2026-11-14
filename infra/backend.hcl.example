@@ -1,0 +1,3 @@
+bucket = "my-terraform-state-CHANGEME"
+key    = "eks-helm-observability/dev.tfstate"
+region = "eu-central-1"

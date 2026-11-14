@@ -1,0 +1,73 @@
+{{- /*
+Multi-window, multi-burn-rate SLO alerts (Google SRE Workbook, chapter 5).
+A burn rate of 1 spends exactly the 30-day error budget in 30 days.
+  page:   14.4x over 1h (and 5m)  -> 2% of budget gone in 1 hour
+          6x    over 6h (and 30m) -> 5% of budget gone in 6 hours
+  ticket: 3x    over 1d (and 2h)  -> 10% of budget gone in 1 day
+          1x    over 3d (and 6h)  -> 10% of budget gone in 3 days
+*/ -}}
+{{- $job := .Release.Name -}}
+{{- $slo := .Values.slo -}}
+{{- $windows := list "5m" "30m" "1h" "2h" "6h" "1d" "3d" -}}
+{{- $alerts := list
+      (dict "long" "1h" "short" "5m"  "factor" "14.4" "severity" "page")
+      (dict "long" "6h" "short" "30m" "factor" "6"    "severity" "page")
+      (dict "long" "1d" "short" "2h"  "factor" "3"    "severity" "ticket")
+      (dict "long" "3d" "short" "6h"  "factor" "1"    "severity" "ticket") -}}
+{{- $slis := list
+      (dict "name" "availability" "target" (toString $slo.availabilityTarget)
+            "desc" "requests returning 5xx")
+      (dict "name" "latency" "target" (toString $slo.latencyTarget)
+            "desc" (printf "requests slower than %ss" $slo.latencyThresholdSeconds)) -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ $job }}-slo
+  labels:
+    app.kubernetes.io/name: {{ $job }}
+spec:
+  groups:
+    - name: {{ $job }}-slo-recording
+      interval: 30s
+      rules:
+        {{- range $w := $windows }}
+        - record: slo:sli_error:ratio_rate{{ $w }}
+          labels:
+            job: {{ $job }}
+            slo: availability
+          expr: |
+            sum(rate(http_request_duration_seconds_count{job="{{ $job }}", status=~"5.."}[{{ $w }}]))
+            /
+            sum(rate(http_request_duration_seconds_count{job="{{ $job }}"}[{{ $w }}]))
+        - record: slo:sli_error:ratio_rate{{ $w }}
+          labels:
+            job: {{ $job }}
+            slo: latency
+          expr: |
+            1 - (
+              sum(rate(http_request_duration_seconds_bucket{job="{{ $job }}", le="{{ $slo.latencyThresholdSeconds }}"}[{{ $w }}]))
+              /
+              sum(rate(http_request_duration_seconds_count{job="{{ $job }}"}[{{ $w }}]))
+            )
+        {{- end }}
+
+    - name: {{ $job }}-slo-alerts
+      rules:
+        {{- range $s := $slis }}
+        {{- range $a := $alerts }}
+        - alert: {{ title $s.name }}BudgetBurn{{ $a.long }}
+          expr: |
+            slo:sli_error:ratio_rate{{ $a.long }}{job="{{ $job }}", slo="{{ $s.name }}"} > ({{ $a.factor }} * (1 - {{ $s.target }}))
+            and
+            slo:sli_error:ratio_rate{{ $a.short }}{job="{{ $job }}", slo="{{ $s.name }}"} > ({{ $a.factor }} * (1 - {{ $s.target }}))
+          for: 2m
+          labels:
+            severity: {{ $a.severity }}
+          annotations:
+            summary: "{{ $job }} {{ $s.name }} SLO burning {{ $a.factor }}x budget over {{ $a.long }}"
+            description: >-
+              {{ "{{" }} $value | humanizePercentage {{ "}}" }} of {{ $s.desc }} over the last {{ $a.long }};
+              the {{ $s.name }} SLO target is {{ $s.target }}.
+            runbook_url: {{ $slo.runbookBaseUrl }}#{{ $s.name }}-budget-burn
+        {{- end }}
+        {{- end }}
